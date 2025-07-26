@@ -198,8 +198,7 @@ print(df.head())
 
 # Import necessary libraries
 from sklearn.feature_selection import SelectKBest, f_classif
-import pandas as pd
-import numpy as np
+
 
 # Load the dataset (assuming it's already processed from previous steps)
 # If you ran cell 1 and 2, use the updated df instead of reloading
@@ -246,7 +245,241 @@ print(df.head())
 
 
 
+# Import necessary libraries for modeling and evaluation
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score, f1_score
+import xgboost as xgb
+
+# Ensure the DataFrame only contains selected features and target
+selected_features = [
+    'Lead Source_Reference', 
+    'Last Activity_Olark Chat Conversation', 
+    'Last Activity_SMS Sent', 
+    'What is your current occupation_Unemployed', 
+    'What is your current occupation_Working Professional', 
+    'Tags_Closed by Horizzon', 
+    'Tags_Interested in other courses', 
+    'Tags_Ringing', 
+    'Tags_Will revert after reading the email', 
+    'Total Time Spent on Website'
+]
+X = df[selected_features]  # Features (only selected ones)
+y = df['Converted']  # Target variable
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Initialize models
+models = {
+    'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+    'Random Forest': RandomForestClassifier(random_state=42, n_estimators=100),
+    'XGBoost': xgb.XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss')
+}
+
+# Dictionary to store evaluation metrics
+results = {'Model': [], 'F1-Score': [], 'AUC': []}
+
+# Train and evaluate each model
+for model_name, model in models.items():
+    # Train the model
+    model.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = model.predict(X_test)
+    
+    # Calculate metrics
+    f1 = f1_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
+    
+    # Store results
+    results['Model'].append(model_name)
+    results['F1-Score'].append(f1)
+    results['AUC'].append(auc)
+    
+    # Print classification report
+    print(f"\nClassification Report for {model_name}:")
+    print(classification_report(y_test, y_pred))
+
+# Convert results to DataFrame
+results_df = pd.DataFrame(results)
+
+# Plot comparison of models
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Model', y='F1-Score', data=results_df, color='skyblue', label='F1-Score')
+sns.barplot(x='Model', y='AUC', data=results_df, color='lightcoral', alpha=0.5, label='AUC')
+plt.title('Model Performance Comparison')
+plt.ylabel('Score')
+plt.legend()
+plt.show()
+
+# Display results
+print("\nModel Performance Summary:")
+print(results_df)
 
 
 
 
+import xgboost as xgb
+
+# Use the trained XGBoost model from the previous step
+# Assuming the XGBoost model is stored in 'models' dictionary with key 'XGBoost'
+model_xgb = models['XGBoost']
+
+# Get feature importance
+feature_importance = model_xgb.feature_importances_
+feature_names = [
+    'Lead Source_Reference', 
+    'Last Activity_Olark Chat Conversation', 
+    'Last Activity_SMS Sent', 
+    'What is your current occupation_Unemployed', 
+    'What is your current occupation_Working Professional', 
+    'Tags_Closed by Horizzon', 
+    'Tags_Interested in other courses', 
+    'Tags_Ringing', 
+    'Tags_Will revert after reading the email', 
+    'Total Time Spent on Website'
+]
+
+# Create a DataFrame for feature importance
+importance_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': feature_importance
+})
+
+# Sort by importance
+importance_df = importance_df.sort_values(by='Importance', ascending=False)
+
+# Plot feature importance
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Importance', y='Feature', data=importance_df, color='teal')
+plt.title('Feature Importance in XGBoost Model')
+plt.xlabel('Importance Score')
+plt.ylabel('Feature')
+plt.show()
+
+# Display the importance DataFrame
+print("\nFeature Importance Summary:")
+print(importance_df)
+
+
+
+# Import necessary libraries
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import roc_auc_score, f1_score
+
+# Define the feature set and target
+selected_features = [
+    'Lead Source_Reference', 
+    'Last Activity_Olark Chat Conversation', 
+    'Last Activity_SMS Sent', 
+    'What is your current occupation_Unemployed', 
+    'What is your current occupation_Working Professional', 
+    'Tags_Closed by Horizzon', 
+    'Tags_Interested in other courses', 
+    'Tags_Ringing', 
+    'Tags_Will revert after reading the email', 
+    'Total Time Spent on Website'
+]
+X = df[selected_features]
+y = df['Converted']
+
+# Split the data
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Define the XGBoost model
+xgb_model = xgb.XGBClassifier(eval_metric='logloss', random_state=42)
+
+# Define parameter grid for GridSearchCV
+param_grid = {
+    'n_estimators': [100, 200],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.01, 0.1, 0.2]
+}
+
+# Perform GridSearchCV
+grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, 
+                          cv=5, scoring='roc_auc', n_jobs=-1, verbose=1)
+grid_search.fit(X_train, y_train)
+
+# Best parameters and score
+print("\nBest Parameters:", grid_search.best_params_)
+print("Best AUC Score:", grid_search.best_score_)
+
+# Evaluate the best model
+best_model = grid_search.best_estimator_
+y_pred = best_model.predict(X_test)
+y_prob = best_model.predict_proba(X_test)[:, 1]
+
+f1 = f1_score(y_test, y_pred)
+auc = roc_auc_score(y_test, y_prob)
+
+print("\nPerformance of Best Model on Test Set:")
+print(f"F1-Score: {f1:.4f}")
+print(f"AUC: {auc:.4f}")
+
+
+# Assume 'best_model' is the optimized model from the previous step
+# Use the first 5 rows of the test set as a sample
+sample_data = X_test.iloc[:5].copy()
+sample_predictions = best_model.predict(sample_data)
+sample_probabilities = best_model.predict_proba(sample_data)[:, 1]
+
+# Create a DataFrame for the dashboard
+dashboard_df = pd.DataFrame({
+    'Lead Index': range(5),
+    'Predicted Conversion': sample_predictions,
+    'Conversion Probability': sample_probabilities
+})
+
+# Plot the conversion probabilities
+plt.figure(figsize=(10, 6))
+bars = plt.bar(dashboard_df['Lead Index'], dashboard_df['Conversion Probability'], color='lightgreen')
+plt.title('Conversion Probability for Sample Leads')
+plt.xlabel('Lead Index')
+plt.ylabel('Probability of Conversion')
+plt.ylim(0, 1)
+for bar, prob in zip(bars, dashboard_df['Conversion Probability']):
+    plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02, f'{prob:.2f}',
+             ha='center', va='bottom')
+plt.show()
+
+# Display the dashboard table
+print("\nDashboard Summary:")
+print(dashboard_df)
+
+
+# Use the entire test set
+all_predictions = best_model.predict(X_test)
+all_probabilities = best_model.predict_proba(X_test)[:, 1]
+
+# Create a DataFrame for the full dashboard
+dashboard_df = pd.DataFrame({
+    'Lead Index': range(len(X_test)),
+    'Predicted Conversion': all_predictions,
+    'Conversion Probability': all_probabilities
+})
+
+# Sort by Conversion Probability in descending order
+dashboard_df = dashboard_df.sort_values(by='Conversion Probability', ascending=False)
+
+# Plot the top 10 leads
+plt.figure(figsize=(12, 6))
+bars = plt.bar(dashboard_df['Lead Index'][:10], dashboard_df['Conversion Probability'][:10], color='lightgreen')
+plt.title('Top 10 Conversion Probabilities for All Leads')
+plt.xlabel('Lead Index')
+plt.ylabel('Probability of Conversion')
+plt.ylim(0, 1)
+for bar, prob in zip(bars, dashboard_df['Conversion Probability'][:10]):
+    plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02, f'{prob:.2f}',
+             ha='center', va='bottom')
+plt.show()
+
+# Display the top 10 leads
+print("\nTop 10 Leads Dashboard Summary:")
+print(dashboard_df.head(10))
+
+
+plt.ylim(0.6, 1)

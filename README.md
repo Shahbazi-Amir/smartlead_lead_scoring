@@ -1,42 +1,88 @@
-LeadScoreAI Project Overview
-Objective
-The LeadScoreAI project aims to build a machine learning model to predict the value of sales leads, enabling sales teams to prioritize high-quality leads for conversion. This is a binary classification problem where leads are labeled as either high-quality (likely to convert) or low-quality (less likely to convert).
-Project Description
+# SmartLead: AI-Powered Lead Scoring System
 
-Problem: Classify sales leads based on their likelihood of conversion using features such as demographic information, online behavior, and past interactions.
-Data: The dataset includes features about leads and a binary target variable (0 or 1) indicating conversion status.
-Skills Required:
-Classification: Using algorithms like Logistic Regression, Random Forest, or XGBoost.
-Feature Importance: Identifying key features that drive predictions.
-Model Evaluation: Evaluating performance using metrics like AUC, F1-Score, Precision, and Recall.
+## 🧠 Project Objective
+The goal of this project is to develop a machine learning classification model that predicts the likelihood of a sales lead converting into a customer. This helps marketing and sales teams prioritize high-potential leads efficiently.
 
+---
 
-Difficulty Level: 8/10, requiring a deeper understanding of business metrics and machine learning techniques.
+## 📊 Dataset
+The dataset contains detailed attributes for each lead such as:
 
-Project Steps
+- Lead Source
+- Last Activity
+- Occupation
+- Tags
+- Time Spent on Website
+- City, Country, etc.
+- Target: `Converted` (1 = Converted, 0 = Not Converted)
 
-Data Collection and Preparation:
-Load and explore the dataset.
-Handle missing values and encode categorical features.
-Normalize or standardize features.
+---
 
+## ⚙️ Data Preprocessing
 
-Exploratory Data Analysis (EDA):
-Analyze data distributions and relationships between features.
-Visualize data using charts (e.g., histograms, correlation matrices).
+- Replaced 'Select' entries with `NaN`.
+- Removed columns with >40% missing data.
+- Filled missing values:
+  - Numerical: median
+  - Categorical: mode
+- One-Hot Encoding for categorical features.
+- Standardization for numerical features.
 
+---
 
-Model Selection and Training:
-Select appropriate algorithms (e.g., Random Forest, XGBoost).
-Train models and tune hyperparameters.
+## 🔍 Feature Selection
 
+Used `SelectKBest` with ANOVA F-test to select top 10 features:
+- `Lead Source_Reference`
+- `Tags_Closed by Horizzon`
+- `Tags_Ringing`
+- `What is your current occupation_Working Professional`
+- `Tags_Will revert after reading the email`
+- `What is your current occupation_Unemployed`
+- `Last Activity_SMS Sent`
+- `Tags_Interested in other courses`
+- `Last Activity_Olark Chat Conversation`
+- `Total Time Spent on Website`
 
-Model Evaluation:
-Evaluate performance using AUC, F1-Score, and other metrics.
-Visualize results with ROC curves and confusion matrices.
+---
 
+## 🤖 Models Used & Performance
 
-Feature Importance Analysis:
-Identify and interpret the most influential features.
+| Model                | F1-Score | AUC    |
+|---------------------|----------|--------|
+| Logistic Regression | 0.798    | 0.895  |
+| Random Forest       | 0.767    | 0.878  |
+| XGBoost             | **0.793**| **0.913** |
 
+- **XGBoost** achieved the best performance.
+- Hyperparameter tuning with `GridSearchCV` improved performance further.
 
+---
+
+## 🔬 Feature Importance (XGBoost)
+
+Top features influencing lead conversion:
+1. `Lead Source_Reference`
+2. `Tags_Closed by Horizzon`
+3. `Tags_Ringing`
+4. `Occupation`
+5. `Last Activity`
+
+---
+
+## 📈 Lead Conversion Dashboard
+
+- Probability scores computed for each lead using the best model.
+- Dashboard highlights top 10 leads with >99% conversion probability.
+- Marketing recommendation: `Follow-up Call`
+
+---
+
+## ✅ Conclusion
+
+This end-to-end lead scoring system helps:
+- Identify leads with high conversion probability
+- Reduce time wasted on low-quality leads
+- Improve sales targeting using data-driven insights
+
+> The full implementation is available in `smartlead_lead_scoring.ipynb`.
